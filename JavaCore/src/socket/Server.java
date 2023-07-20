@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -13,6 +14,9 @@ import java.util.logging.Logger;
 public class Server {
 	private String ip;
 	private int port;
+	private int connectTimeOut;
+	private int sendTimeOut;
+	private int receiveTimeOut;
 	
 	public Server() {
 		FileReader reader = null;
@@ -29,6 +33,9 @@ public class Server {
 
 			this.ip = list.get(0);
 			this.port = Integer.parseInt(list.get(1));
+			this.connectTimeOut = Integer.parseInt(list.get(2));
+			this.sendTimeOut = Integer.parseInt(list.get(3));
+			this.receiveTimeOut = Integer.parseInt(list.get(4));
 
 		} catch (FileNotFoundException ex) {
 			Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
@@ -56,12 +63,15 @@ public class Server {
 			// Start server
 			ServerSocket server = new ServerSocket(1985);
 			System.out.println("Server is ready...");
+			Socket socket = server.accept();
 			
 			while (true) {
-				Socket socket = server.accept();
-				
 				// Received from a client
-				new ServerThread(socket).start();
+				BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+				String request = br.readLine();
+				if (request != null) {
+					System.out.println("Received from a client: " + request);
+				}	
 				Thread.sleep(1000);
 			}
 		} catch (IOException e) {
@@ -86,4 +96,15 @@ public class Server {
 		return port;
 	}
 
+	public int getConnectTimeOut() {
+		return connectTimeOut;
+	}
+
+	public int getSendTimeOut() {
+		return sendTimeOut;
+	}
+
+	public int getReceiveTimeOut() {
+		return receiveTimeOut;
+	}
 }

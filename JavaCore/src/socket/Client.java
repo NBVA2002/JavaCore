@@ -4,16 +4,23 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Client {
 	private String ip;
 	private int port;
-	
+	private int connectTimeOut;
+	private int sendTimeOut;
+	private int receiveTimeOut;
+
 	public Client() {
 		FileReader reader = null;
 		BufferedReader bufferedReader = null;
@@ -29,6 +36,9 @@ public class Client {
 
 			this.ip = list.get(0);
 			this.port = Integer.parseInt(list.get(1));
+			this.connectTimeOut = Integer.parseInt(list.get(2));
+			this.sendTimeOut = Integer.parseInt(list.get(3));
+			this.receiveTimeOut = Integer.parseInt(list.get(4));
 
 		} catch (FileNotFoundException ex) {
 			Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
@@ -49,32 +59,53 @@ public class Client {
 			}
 		}
 	}
-	
-	public void connect() {
-		try {
-			// Sending to server
-			while (true) {
-				Socket socket = new Socket(ip, 1985);
-				new ClientThread(socket).start();
 
-			    Thread.sleep(1000);
-			    
+	public void connect() {
+		SocketAddress socketAddress = new InetSocketAddress(ip, port);
+		Socket socket = new Socket();
+		PrintStream printStream;
+		try {
+			// Connect to server
+			socket.connect(socketAddress, connectTimeOut);
+			while (socket.isConnected()) {
+				printStream = new PrintStream(socket.getOutputStream());
+				String str = randomMessage();
+				printStream.println(str);
+				System.out.println(str + socket.isConnected());
+				Thread.sleep(1000);
 			}
+			socket.close();
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			System.out.println("Mất kết nối sever");
+			System.out.println("Không có kết nối sever");
+			e.printStackTrace();
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
-	public static void main(String[] args) {
-		Client client = new Client();
-		client.connect();
+	public static String randomMessage() {
+		// Tạo một đối tượng Random
+		Random random = new Random();
+
+		// Khai báo các ký tự có thể có trong chuỗi
+		String charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+		// Khai báo độ dài của chuỗi
+		int length = 10;
+
+		// Tạo chuỗi ngẫu nhiên
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < length; i++) {
+			int randomIndex = random.nextInt(charset.length());
+			char randomChar = charset.charAt(randomIndex);
+			sb.append(randomChar);
+		}
+		return sb.toString();
 	}
 
 	public String getIp() {
@@ -83,6 +114,23 @@ public class Client {
 
 	public int getPort() {
 		return port;
+	}
+
+	public int getConnectTimeOut() {
+		return connectTimeOut;
+	}
+
+	public int getSendTimeOut() {
+		return sendTimeOut;
+	}
+
+	public int getReceiveTimeOut() {
+		return receiveTimeOut;
+	}
+	
+	public static void main(String[] args) {
+		Client client = new Client();
+		client.connect();
 	}
 
 }
